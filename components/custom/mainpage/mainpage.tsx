@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import LiveFlightData from "./LiveFlightData";
 
 interface Airport {
   name: string;
@@ -37,6 +38,11 @@ export default function Mainpage() {
       setLoading(true);
       setError("");
       setRoute(null);
+
+      const isOnline = await fetch("https://api.adsbdb.com/v0/online").then((res) => res.json());
+      if (!isOnline?.response?.uptime) {
+        throw new Error("Flight data API is currently offline");
+      }
 
       const res = await fetch(
         `https://api.adsbdb.com/v0/callsign/${callsign.toUpperCase()}`
@@ -133,6 +139,21 @@ export default function Mainpage() {
 
           </div>
         </div>
+      )}
+      {route && (
+        <LiveFlightData
+          callsign={callsign}
+          origin={{
+            latitude: route.origin.latitude,
+            longitude: route.origin.longitude,
+            name: route.origin.name,
+          }}
+          destination={{
+            latitude: route.destination.latitude,
+            longitude: route.destination.longitude,
+            name: route.destination.name,
+          }}
+        />
       )}
     </div>
   );
