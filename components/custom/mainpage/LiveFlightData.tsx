@@ -26,6 +26,7 @@ interface LiveAircraft {
 
 interface LiveProps {
     callsign: string;
+    icao: string;
     origin: {
         latitude: number;
         longitude: number;
@@ -38,8 +39,21 @@ interface LiveProps {
     };
 }
 
+interface OpenSkyAircraft {
+    icao24: string;
+    callsign: string;
+    lat: number;
+    lon: number;
+    altitude: number; // feet
+    velocity: number; // knots
+    track: number;
+    verticalRate: number; // ft/min
+}
+
+
 export default function LiveFlightData({
     callsign,
+    icao,
     origin,
     destination,
 }: LiveProps) {
@@ -47,6 +61,7 @@ export default function LiveFlightData({
     const [error, setError] = useState("");
     const [countdown, setCountdown] = useState(15);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [openSky, setOpenSky] = useState<OpenSkyAircraft | null>(null);
 
     useEffect(() => {
         if (!callsign) return;
@@ -61,8 +76,11 @@ export default function LiveFlightData({
 
                 if (!data?.ac || data.ac.length === 0) {
                     setAircraft(null);
+                    setOpenSky(null);
                 } else {
-                    setAircraft(data.ac[0]);
+                    const ac = data.ac[0];
+                    setAircraft(ac);
+                    await fetchOpenSky(ac.hex);
                 }
 
                 setLastUpdated(new Date());
@@ -70,6 +88,39 @@ export default function LiveFlightData({
                 setError("");
             } catch {
                 setError("Unable to fetch live data");
+            }
+        };
+
+        const fetchOpenSky = async (icao?: string) => {
+            if (!icao) return;
+
+            try {
+                const res = await fetch(
+                    `https://opensky-network.org/api/states/all?icao24=${icao.toLowerCase()}`
+                );
+
+                const data = await res.json();
+
+                if (!data?.states || data.states.length === 0) {
+                    setOpenSky(null);
+                    return;
+                }
+
+                const state = data.states[0];
+
+                setOpenSky({
+                    icao24: state[0],
+                    callsign: state[1]?.trim(),
+                    lon: state[5],
+                    lat: state[6],
+                    altitude: state[7] ? state[7] * 3.28084 : 0,       // meters → feet
+                    velocity: state[9] ? state[9] * 1.94384 : 0,       // m/s → knots
+                    track: state[10],
+                    verticalRate: state[11] ? state[11] * 196.85 : 0,  // m/s → ft/min
+                });
+
+            } catch {
+                setOpenSky(null);
             }
         };
 
@@ -114,16 +165,44 @@ export default function LiveFlightData({
             )}
 
             {aircraft && (
-                <div className="grid grid-cols-2 gap-4 text-sm text-zinc-300">
-                    <p><strong>Registration:</strong> {aircraft.r}</p>
-                    <p><strong>Aircraft:</strong> {aircraft.desc}</p>
-                    <p><strong>Altitude:</strong> {aircraft.alt_baro} ft</p>
-                    <p><strong>Speed:</strong> {aircraft.gs} knots</p>
-                    <p><strong>Heading:</strong> {aircraft.track}°</p>
-                    <p><strong>Climb Rate:</strong> {aircraft.baro_rate} ft/min</p>
-                    <p><strong>Squawk:</strong> {aircraft.squawk}</p>
-                    <p><strong>Latitude:</strong> {aircraft.lat}</p>
-                    <p><strong>Longitude:</strong> {aircraft.lon}</p>
+                <div className="grid md:grid-cols-2 gap-8 mt-6">
+
+                    {/* Airplanes.live */}
+                    <div className="bg-zinc-800 p-4 rounded-lg">
+                        <h3 className="text-red-400 font-semibold mb-3">
+                            Airplanes.live
+                        </h3>
+
+                        <p><strong>Hex:</strong> {aircraft.hex}</p>
+                        <p><strong>Altitude:</strong> {aircraft.alt_baro} ft</p>
+                        <p><strong>Speed:</strong> {aircraft.gs} knots</p>
+                        <p><strong>Heading:</strong> {aircraft.track}°</p>
+                        <p><strong>Vertical Rate:</strong> {aircraft.baro_rate} ft/min</p>
+                        <p><strong>Lat:</strong> {aircraft.lat}</p>
+                        <p><strong>Lon:</strong> {aircraft.lon}</p>
+                    </div>
+
+                    {/* OpenSky */}
+                    <div className="bg-zinc-800 p-4 rounded-lg">
+                        <h3 className="text-green-400 font-semibold mb-3">
+                            OpenSky
+                        </h3>
+
+                        {openSky ? (
+                            <>
+                                <p><strong>Hex:</strong> {openSky.icao24}</p>
+                                <p><strong>Altitude:</strong> {openSky.altitude.toFixed(0)} ft</p>
+                                <p><strong>Speed:</strong> {openSky.velocity.toFixed(0)} knots</p>
+                                <p><strong>Heading:</strong> {openSky.track}°</p>
+                                <p><strong>Vertical Rate:</strong> {openSky.verticalRate.toFixed(0)} ft/min</p>
+                                <p><strong>Lat:</strong> {openSky.lat}</p>
+                                <p><strong>Lon:</strong> {openSky.lon}</p>
+                            </>
+                        ) : (
+                            <p className="text-zinc-400">No OpenSky match</p>
+                        )}
+                    </div>
+
                 </div>
             )}
             {aircraft && (
