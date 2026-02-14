@@ -143,7 +143,7 @@ export default function Mainpage() {
       {route && (
         <LiveFlightData
           callsign={callsign}
-          icao={route.callsign_icao}
+          icao={route.callsign}
           origin={{
             latitude: route.origin.latitude,
             longitude: route.origin.longitude,
