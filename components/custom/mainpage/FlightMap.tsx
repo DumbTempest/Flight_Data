@@ -92,16 +92,28 @@ export default function FlightMap({
                   [origin.latitude, origin.longitude],
                   [aircraft.lat, aircraft.lon],
                 ]}
-                pathOptions={{ color: "#00ffff", weight: 3 }}
+                pathOptions={{
+                  color: "#00ffff",
+                  weight: 3,
+                  dashArray: "4 6",  
+                  lineCap: "round",
+                }}
               />
 
+
               <Polyline
-                positions={[
-                  [aircraft.lat, aircraft.lon],
-                  [destination.latitude, destination.longitude],
-                ]}
-                pathOptions={{ color: "#ff00ff", weight: 3 }}
-              />
+  positions={[
+    [aircraft.lat, aircraft.lon],
+    [destination.latitude, destination.longitude],
+  ]}
+  pathOptions={{
+    color: "#ff00ff",
+    weight: 3,
+    dashArray: "4 6",
+    lineCap: "round",
+  }}
+/>
+
             </>
           )}
 
