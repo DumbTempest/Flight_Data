@@ -114,19 +114,21 @@ export default function Mainpage() {
           origin={route?.origin}
           destination={route?.destination}
         />
+      
       </div>
 
 
       <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-6 text-white">
-          <Image 
+          <Image
             src="/logo.png"
             alt="Plane Icon"
             width={32}
-          /> Flight Tracker
+            height={32}
+          />Flight Tracker
         </h1>
 
- 
+
         {history.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm text-zinc-400 mb-2">
@@ -183,11 +185,12 @@ export default function Mainpage() {
         </div>
 
         <div className="px-6 pb-10">
-          <h1 className="text-2xl font-bold mb-6 text-white">
-            <Image 
+          <h1 className="text-2xl font-bold mb-6 text-white rounded-full">
+            <Image
               src="/logo.png"
               alt="Plane Icon"
               width={32}
+              height={32}
             /> Flight Tracker
           </h1>
 

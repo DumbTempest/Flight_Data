@@ -1,6 +1,6 @@
-"use client";
 
 import { useEffect, useState } from "react";
+
 
 interface LiveProps {
   callsign: string;
