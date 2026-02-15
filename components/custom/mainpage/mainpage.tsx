@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import LiveFlightData from "./LiveFlightData";
+import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
+import SearchSection from "./searchsection";
+
+const FlightMap = dynamic(() => import("./FlightMap"), {
+  ssr: false,
+});
 
 interface Airport {
   name: string;
@@ -10,15 +15,12 @@ interface Airport {
   icao_code: string;
   latitude: number;
   longitude: number;
-  elevation: number;
 }
 
 interface FlightRoute {
   callsign: string;
   airline: {
     name: string;
-    icao: string;
-    iata: string;
     country: string;
   };
   origin: Airport;
@@ -28,134 +30,198 @@ interface FlightRoute {
 export default function Mainpage() {
   const [callsign, setCallsign] = useState("");
   const [route, setRoute] = useState<FlightRoute | null>(null);
+  const [aircraft, setAircraft] = useState<{ lat: number; lon: number; track: number } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [history, setHistory] = useState<string[]>([]);
+
+  // bottom sheet ht mobile
+  const [sheetHeight, setSheetHeight] = useState(75);
+  const startY = useRef<number | null>(null);
+
+
+  useEffect(() => {
+    const saved = localStorage.getItem("flightHistory");
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHistory(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+
+    const diff = startY.current - e.touches[0].clientY;
+    const newHeight = Math.min(100, Math.max(30, sheetHeight + diff / 5));
+
+    setSheetHeight(newHeight);
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (sheetHeight > 85) setSheetHeight(100);
+    else if (sheetHeight > 50) setSheetHeight(75);
+    else setSheetHeight(30);
+
+    startY.current = null;
+  };
 
   async function fetchFlight() {
     if (!callsign.trim()) return;
 
-    try {
-      setLoading(true);
-      setError("");
-      setRoute(null);
+    setLoading(true);
+    setRoute(null);
 
-      const isOnline = await fetch("https://api.adsbdb.com/v0/online").then((res) => res.json());
-      if (!isOnline?.response?.uptime) {
-        throw new Error("Flight data API is currently offline");
-      }
+    const upper = callsign.toUpperCase();
 
-      const res = await fetch(
-        `https://api.adsbdb.com/v0/callsign/${callsign.toUpperCase()}`
-      );
+    const res = await fetch(
+      `https://api.adsbdb.com/v0/callsign/${upper}`
+    );
 
-      if (!res.ok) {
-        throw new Error("Flight not found");
-      }
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (!data?.response?.flightroute) {
-        throw new Error("No route data available");
-      }
-
+    if (data?.response?.flightroute) {
       setRoute(data.response.flightroute);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    } finally {
-      setLoading(false);
+
+      const updated = [
+        upper,
+        ...history.filter((c) => c !== upper),
+      ].slice(0, 5);
+
+      setHistory(updated);
+      localStorage.setItem("flightHistory", JSON.stringify(updated));
     }
+
+    setLoading(false);
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-950 text-white p-10">
-      <h1 className="text-3xl font-bold mb-8">
-        ✈ Flight Route Tracker
-      </h1>
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem("flightHistory");
+  };
 
-      {/* Search Bar */}
-      <div className="flex gap-4 mb-10">
-        <input
-          type="text"
-          placeholder="Enter Callsign (e.g. AIC2609)"
-          value={callsign}
-          onChange={(e) => setCallsign(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 focus:outline-none w-72"
+  return (
+    <div className="relative h-screen w-screen overflow-hidden">
+
+
+      <div className="absolute inset-0 z-0">
+        <FlightMap
+          aircraft={aircraft}
+          origin={route?.origin}
+          destination={route?.destination}
         />
-        <button
-          onClick={fetchFlight}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition"
-        >
-          Search
-        </button>
       </div>
 
-      {loading && <p className="text-zinc-400">Loading...</p>}
-      {error && <p className="text-red-400">{error}</p>}
 
-      {route && (
-        <div className="space-y-8">
+      <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
+        <h1 className="text-2xl font-bold mb-6 text-white">
+          ✈ Flight Tracker
+        </h1>
 
-          {/* Airline Card */}
-          <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-4">Airline</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm text-zinc-300">
-              <p><strong>Name:</strong> {route.airline.name}</p>
-              <p><strong>ICAO:</strong> {route.airline.icao}</p>
-              <p><strong>IATA:</strong> {route.airline.iata}</p>
-              <p><strong>Country:</strong> {route.airline.country}</p>
+ 
+        {history.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm text-zinc-400 mb-2">
+              Recent Searches
+            </h3>
+
+            <div className="flex flex-wrap gap-2 mb-2">
+              {history.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setCallsign(item);
+                    fetchFlight();
+                  }}
+                  className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700"
+                >
+                  {item}
+                </button>
+              ))}
             </div>
+
+            <button
+              onClick={clearHistory}
+              className="text-xs text-red-400"
+            >
+              Clear history
+            </button>
           </div>
+        )}
 
-          {/* Route */}
-          <div className="grid md:grid-cols-2 gap-8">
-
-            <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-              <h2 className="text-lg font-semibold mb-4 text-green-400">
-                Origin
-              </h2>
-              <p>{route.origin.name}</p>
-              <p>{route.origin.municipality}</p>
-              <p>IATA: {route.origin.iata_code}</p>
-              <p>ICAO: {route.origin.icao_code}</p>
-              <p>Lat: {route.origin.latitude}</p>
-              <p>Lon: {route.origin.longitude}</p>
-            </div>
-
-            <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-              <h2 className="text-lg font-semibold mb-4 text-blue-400">
-                Destination
-              </h2>
-              <p>{route.destination.name}</p>
-              <p>{route.destination.municipality}</p>
-              <p>IATA: {route.destination.iata_code}</p>
-              <p>ICAO: {route.destination.icao_code}</p>
-              <p>Lat: {route.destination.latitude}</p>
-              <p>Lon: {route.destination.longitude}</p>
-            </div>
-
-          </div>
-        </div>
-      )}
-      {route && (
-        <LiveFlightData
+        <SearchSection
           callsign={callsign}
-          icao={route.callsign}
-          origin={{
-            latitude: route.origin.latitude,
-            longitude: route.origin.longitude,
-            name: route.origin.name,
-          }}
-          destination={{
-            latitude: route.destination.latitude,
-            longitude: route.destination.longitude,
-            name: route.destination.name,
-          }}
+          setCallsign={setCallsign}
+          fetchFlight={fetchFlight}
+          loading={loading}
+          route={route}
+          setAircraft={setAircraft}
         />
-      )}
+      </div>
+
+      {/* mobile sheet */}
+      <div
+        className="lg:hidden absolute bottom-0 left-0 w-full bg-zinc-950/95 backdrop-blur-xl rounded-t-3xl border-t border-zinc-800 hide-scrollbar overflow-y-auto"
+        style={{ height: `${sheetHeight}%` }}
+      >
+        {/* Drag Handle */}
+        <div
+          className="flex justify-center py-3"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="w-14 h-1.5 bg-zinc-600 rounded-full" />
+        </div>
+
+        <div className="px-6 pb-10">
+          <h1 className="text-2xl font-bold mb-6 text-white">
+            ✈ Flight Tracker
+          </h1>
+
+          {history.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm text-zinc-400 mb-2">
+                Recent Searches
+              </h3>
+
+              <div className="flex flex-wrap gap-2 mb-2">
+                {history.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      setCallsign(item);
+                      fetchFlight();
+                    }}
+                    className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={clearHistory}
+                className="text-xs text-red-400"
+              >
+                Clear history
+              </button>
+            </div>
+          )}
+
+          <SearchSection
+            callsign={callsign}
+            setCallsign={setCallsign}
+            fetchFlight={fetchFlight}
+            loading={loading}
+            route={route}
+            setAircraft={setAircraft}
+          />
+        </div>
+      </div>
     </div>
   );
 }
