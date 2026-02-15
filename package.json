@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack --experimental-https",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "api-dev": "nodemon backend/src/server.ts",
@@ -12,6 +12,7 @@
     "api-start": "node backend/dist/server.js"
   },
   "dependencies": {
+    "@serwist/next": "^9.5.6",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -32,6 +33,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-leaflet": "^5.0.0",
+    "serwist": "^9.5.6",
     "tailwind-merge": "^3.4.0",
     "ts-node": "^10.9.2"
   },
