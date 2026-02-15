@@ -120,7 +120,7 @@ export default function Mainpage() {
       <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-6 text-white">
           <Image 
-            src="/plane-icon.png"
+            src="/logo.png"
             alt="Plane Icon"
             width={32}
           /> Flight Tracker
@@ -184,7 +184,11 @@ export default function Mainpage() {
 
         <div className="px-6 pb-10">
           <h1 className="text-2xl font-bold mb-6 text-white">
-            ✈ Flight Tracker
+            <Image 
+              src="/logo.png"
+              alt="Plane Icon"
+              width={32}
+            /> Flight Tracker
           </h1>
 
           {history.length > 0 && (
