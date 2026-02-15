@@ -225,7 +225,7 @@ export default function LiveFlightData({
                             <p><strong>Lon:</strong> {aircraft.lon}</p>
                         </>
                     ) : (
-                        <p className="text-zinc-400">No OpenSky match</p>
+                        <p className="text-zinc-400">No airplanes.live match</p>
                     )}
                 </div>
 
@@ -250,10 +250,10 @@ export default function LiveFlightData({
                     )}
                 </div>
 
-                {/* ADSB.fi */}
+                {/* ADSB.lol */}
                 <div className="bg-zinc-800 p-4 rounded-lg">
                     <h3 className="text-blue-400 font-semibold mb-3">
-                        ADSB.fi
+                        ADSB.lol
                     </h3>
 
                     {adsbFi ? (
@@ -267,7 +267,7 @@ export default function LiveFlightData({
                             <p><strong>Lon:</strong> {adsbFi.lon}</p>
                         </>
                     ) : (
-                        <p className="text-zinc-400">No ADSB.fi match</p>
+                        <p className="text-zinc-400">No ADSB.lol match</p>
                     )}
                 </div>
             </div>
