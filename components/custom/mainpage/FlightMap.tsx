@@ -10,6 +10,8 @@ import {
 } from "react-leaflet";
 import { useMemo } from "react";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
 
 interface Props {
   aircraft: {
@@ -48,20 +50,20 @@ export default function FlightMap({
           display:flex;
           align-items:center;
           justify-content:center;
-          color:#ffffff;
+          color:#111;
         ">
           ✈
         </div>
       `,
       className: "",
       iconSize: [30, 30],
-      iconAnchor: [10, 15],
+      iconAnchor: [15, 15],
     });
   }, [aircraft]);
 
   const airportIcon = new L.Icon({
     iconUrl:
-      "https://unpkg.com/leaflet@1.5.1/dist/images/marker-icon.png",
+      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
     iconSize: [25, 41],
     iconAnchor: [12, 41],
   });
@@ -69,7 +71,7 @@ export default function FlightMap({
   const aircraftPosition =
     aircraft?.lat && aircraft?.lon
       ? ([aircraft.lat, aircraft.lon] as [number, number])
-      : ([20.5937, 78.9629] as [number, number]); // Default India center
+      : ([20.5937, 78.9629] as [number, number]); // India center
 
   return (
     <div className="h-full w-full">
@@ -79,9 +81,10 @@ export default function FlightMap({
         scrollWheelZoom
         className="h-full w-full"
       >
+        {/* 🔥 MapTiler Streets */}
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='© MapTiler © OpenStreetMap contributors'
+          url={`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
         />
 
         <FeatureGroup>
@@ -93,27 +96,25 @@ export default function FlightMap({
                   [aircraft.lat, aircraft.lon],
                 ]}
                 pathOptions={{
-                  color: "#00ffff",
+                  color: "#0077ff",
                   weight: 3,
-                  dashArray: "4 6",  
+                  dashArray: "4 6",
                   lineCap: "round",
                 }}
               />
 
-
               <Polyline
-  positions={[
-    [aircraft.lat, aircraft.lon],
-    [destination.latitude, destination.longitude],
-  ]}
-  pathOptions={{
-    color: "#ff00ff",
-    weight: 3,
-    dashArray: "4 6",
-    lineCap: "round",
-  }}
-/>
-
+                positions={[
+                  [aircraft.lat, aircraft.lon],
+                  [destination.latitude, destination.longitude],
+                ]}
+                pathOptions={{
+                  color: "#ff0055",
+                  weight: 3,
+                  dashArray: "4 6",
+                  lineCap: "round",
+                }}
+              />
             </>
           )}
 
