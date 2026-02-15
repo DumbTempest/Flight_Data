@@ -34,7 +34,6 @@ export default function FlightMap({
     origin,
     destination,
 }: Props) {
-
     const aircraftIcon = useMemo(() => {
         const heading = aircraft.track ?? 0;
         const rotation = heading - 90;

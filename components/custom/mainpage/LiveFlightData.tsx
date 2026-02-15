@@ -25,6 +25,16 @@ interface LiveAircraft {
     lat: number;
     lon: number;
 }
+interface BestAircraft {
+    lat: number;
+    lon: number;
+    track: number;
+    altitude?: number;
+    speed?: number;
+    verticalRate?: number;
+    hex?: string;
+}
+
 
 interface LiveProps {
     callsign: string;
@@ -76,104 +86,39 @@ export default function LiveFlightData({
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [openSky, setOpenSky] = useState<OpenSkyAircraft | null>(null);
     const [adsbFi, setAdsbFi] = useState<ADSBFiAircraft | null>(null);
+    const [best, setBest] = useState<BestAircraft | null>(null);
+    const [bestSource, setBestSource] = useState<string | null>(null);
+
 
     useEffect(() => {
         if (!callsign) return;
 
-        const fetchAirplanes = async () => {
-            try {
-                const res = await fetch(
-                    `https://api.airplanes.live/v2/callsign/${callsign.toUpperCase()}`
-                );
-                const data = await res.json();
-
-                if (!data?.ac || data.ac.length === 0) {
-                    setAircraft(null);
-                    return;
-                }
-
-                setAircraft(data.ac[0]);
-            } catch {
-                setAircraft(null);
-            }
-        };
-
-        const fetchOpenSky = async () => {
-            try {
-                if (!icao) return;
-
-                const res = await fetch(
-                    `https://opensky-network.org/api/states/all?icao24=${icao.toLowerCase()}`
-                );
-
-                const data = await res.json();
-
-                if (!data?.states || data.states.length === 0) {
-                    setOpenSky(null);
-                    return;
-                }
-
-                const state = data.states[0];
-
-                setOpenSky({
-                    icao24: state[0],
-                    callsign: state[1]?.trim(),
-                    lon: state[5],
-                    lat: state[6],
-                    altitude: state[7] ? state[7] * 3.28084 : 0,
-                    velocity: state[9] ? state[9] * 1.94384 : 0,
-                    track: state[10],
-                    verticalRate: state[11] ? state[11] * 196.85 : 0,
-                });
-            } catch {
-                setOpenSky(null);
-            }
-        };
-
-        const fetchADSBFi = async () => {
-            try {
-                const res = await fetch(`/api/adsdbfi?callsign=${callsign}`);
-
-                const data = await res.json();
-                console.log(data)
-
-                if (!data?.ac || data.ac.length === 0) {
-                    setAdsbFi(null);
-                    return;
-                }
-
-                const ac = data.ac[0];
-
-                setAdsbFi({
-                    hex: ac.hex,
-                    flight: ac.flight,
-                    alt_baro: ac.alt_baro,
-                    gs: ac.gs,
-                    track: ac.track,
-                    baro_rate: ac.baro_rate,
-                    lat: ac.lat,
-                    lon: ac.lon,
-                });
-            } catch {
-                setAdsbFi(null);
-            }
-        };
-
         const fetchAll = async () => {
-            await Promise.allSettled([
-                fetchAirplanes(),
-                fetchOpenSky(),
-                fetchADSBFi(),
-            ]);
+            try {
+                const res = await fetch(
+                    `/api/liveFlight?callsign=${callsign}&icao=${icao}`
+                );
 
-            setLastUpdated(new Date());
-            setCountdown(15);
-            setError("");
+                const data = await res.json();
+
+                if (data.airplanes) setAircraft(data.airplanes);
+                if (data.openSky) setOpenSky(data.openSky);
+                if (data.adsb) setAdsbFi(data.adsb);
+                if (data.best) {
+                    setBest(data.best);
+                    setBestSource(data.source);
+                    setLastUpdated(new Date());
+                }
+                setCountdown(5);
+            } catch (error) {
+                setError("Failed to fetch live data");
+            }
         };
+
 
         fetchAll();
 
-        const refreshInterval = setInterval(fetchAll, 15000);
+        const refreshInterval = setInterval(fetchAll, 5000);
         const countdownInterval = setInterval(() => {
             setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
         }, 1000);
@@ -253,7 +198,7 @@ export default function LiveFlightData({
                 {/* ADSB.lol */}
                 <div className="bg-zinc-800 p-4 rounded-lg">
                     <h3 className="text-blue-400 font-semibold mb-3">
-                        ADSB.lol
+                        ADSB.fi
                     </h3>
 
                     {adsbFi ? (
@@ -267,16 +212,23 @@ export default function LiveFlightData({
                             <p><strong>Lon:</strong> {adsbFi.lon}</p>
                         </>
                     ) : (
-                        <p className="text-zinc-400">No ADSB.lol match</p>
+                        <p className="text-zinc-400">No ADSB.fi match</p>
                     )}
                 </div>
             </div>
-            {adsbFi && (
-                <FlightMap
-                    aircraft={adsbFi}
-                    origin={origin}
-                    destination={destination}
-                />
+            <div>{best ? JSON.stringify(best) : "No best data available"}</div>
+            {best && (
+                <>
+                    <p className="text-sm text-yellow-400 mt-4">
+                        Map Source: {bestSource} {" "}
+                        Last Updated: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : "N/A"}
+                    </p>
+                    <FlightMap
+                        aircraft={best}
+                        origin={origin}
+                        destination={destination}
+                    />
+                </>
             )}
         </div>
     );
