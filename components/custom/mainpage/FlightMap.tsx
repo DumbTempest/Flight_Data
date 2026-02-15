@@ -70,7 +70,7 @@ export default function FlightMap({
                 style={{ height: "500px", width: "100%" }}
             >
                 <TileLayer
-                    attribution="© OpenStreetMap contributors"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
