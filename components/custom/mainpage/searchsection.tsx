@@ -56,7 +56,6 @@ export default function SearchSection({
 
           <LiveFlightData
             callsign={callsign}
-            icao={route.callsign}
             onAircraftUpdate={setAircraft}
           />
         </>

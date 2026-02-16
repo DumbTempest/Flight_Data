@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 interface LiveProps {
   callsign: string;
-  icao: string;
   onAircraftUpdate: (aircraft: {
     lat: number;
     lon: number;
@@ -24,12 +23,10 @@ interface AircraftData {
 
 export default function LiveFlightData({
   callsign,
-  icao,
   onAircraftUpdate,
 }: LiveProps) {
 
   const [airplanes, setAirplanes] = useState<AircraftData | null>(null);
-  const [openSky, setOpenSky] = useState<AircraftData | null>(null);
   const [adsbFi, setAdsbFi] = useState<AircraftData | null>(null);
   const [best, setBest] = useState<AircraftData | null>(null);
   const [countdown, setCountdown] = useState(5);
@@ -40,13 +37,12 @@ export default function LiveFlightData({
     const fetchLive = async () => {
       try {
         const res = await fetch(
-          `/api/liveFlight?callsign=${callsign}&icao=${icao}`
+          `/api/liveFlight?callsign=${callsign}`
         );
 
         const data = await res.json();
 
         if (data.airplanes) setAirplanes(data.airplanes);
-        if (data.openSky) setOpenSky(data.openSky);
         if (data.adsb) setAdsbFi(data.adsb);
 
         if (data.best) {
@@ -54,7 +50,8 @@ export default function LiveFlightData({
           onAircraftUpdate(data.best); // keeps map updating
         }
 
-        setCountdown(5);
+        if(!best) setCountdown(5);
+        else setCountdown(10);
       } catch (err) {
         console.error("Live fetch error");
       }
@@ -71,7 +68,7 @@ export default function LiveFlightData({
       clearInterval(refresh);
       clearInterval(timer);
     };
-  }, [callsign, icao]);
+  }, [callsign]);
 
   if (!callsign) return null;
 
@@ -100,25 +97,6 @@ export default function LiveFlightData({
               <p><span className="text-zinc-400">Heading:</span> {airplanes.track}°</p>
               <p><span className="text-zinc-400">Lat:</span> {airplanes.lat}</p>
               <p><span className="text-zinc-400">Lon:</span> {airplanes.lon}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-zinc-500">No match</p>
-          )}
-        </div>
-
-        {/* OpenSky */}
-        <div className="bg-zinc-800/80 border border-zinc-700 p-4 rounded-lg space-y-2">
-          <h4 className="text-green-400 font-semibold">
-            OpenSky
-          </h4>
-
-          {openSky ? (
-            <div className="text-sm text-zinc-200 space-y-1">
-              <p><span className="text-zinc-400">Altitude:</span> {openSky.altitude?.toFixed(0)} ft</p>
-              <p><span className="text-zinc-400">Speed:</span> {openSky.speed?.toFixed(0)} knots</p>
-              <p><span className="text-zinc-400">Heading:</span> {openSky.track}°</p>
-              <p><span className="text-zinc-400">Lat:</span> {openSky.lat}</p>
-              <p><span className="text-zinc-400">Lon:</span> {openSky.lon}</p>
             </div>
           ) : (
             <p className="text-sm text-zinc-500">No match</p>

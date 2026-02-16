@@ -35,10 +35,19 @@ export default function Mainpage() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
 
+  const [user, setUser] = useState<any>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  const [LoginData, setLoginData] = useState({ email: "", password: "" });
+  const [RegisterData, setRegisterData] = useState({ name: "", email: "", password: "" });
+
   // bottom sheet ht mobile
   const [sheetHeight, setSheetHeight] = useState(75);
   const startY = useRef<number | null>(null);
-
 
   useEffect(() => {
     const saved = localStorage.getItem("flightHistory");
@@ -46,7 +55,99 @@ export default function Mainpage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setHistory(JSON.parse(saved));
     }
+
+    verifyUser();
   }, []);
+
+  async function verifyUser() {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) return;
+
+      const res = await fetch("http://localhost:3001/api/auth/verify", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      console.log(res);
+
+      if (data.success) {
+        setUser(data.data);
+      } else {
+        localStorage.removeItem("token");
+      }
+    } catch (err) {
+      localStorage.removeItem("token");
+    }
+  }
+
+  async function handleLogin() {
+    try {
+      setAuthLoading(true);
+      setAuthError("");
+
+      const res = await fetch("http://localhost:3001/api/auth/loginUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(LoginData),
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      if (data.data?.accessToken) {
+        localStorage.setItem("token", data.data.accessToken);
+      }
+
+      if (data.data?.user) {
+        setUser(data.data.user);
+      }
+
+      setShowLogin(false);
+
+    } catch (err: any) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleRegister() {
+    try {
+      setAuthLoading(true);
+      setAuthError("");
+
+      const res = await fetch("http://localhost:3001/api/auth/registerUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(RegisterData),
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      alert("Registration successful!");
+      setShowRegister(false);
+
+    } catch (err: any) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setUser(null);
+  }
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
@@ -83,6 +184,7 @@ export default function Mainpage() {
     );
 
     const data = await res.json();
+    console.log(data);
 
     if (data?.response?.flightroute) {
       setRoute(data.response.flightroute);
@@ -107,6 +209,109 @@ export default function Mainpage() {
   return (
     <div className="relative h-screen w-screen overflow-hidden">
 
+      {showLogin && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 p-6 rounded-xl w-[350px] space-y-4">
+            <h2 className="text-xl font-bold text-white">Login</h2>
+
+            <input
+              type="email"
+              placeholder="Email"
+              value={LoginData.email}
+              onChange={(e) =>
+                setLoginData({ ...LoginData, email: e.target.value })
+              }
+              className="w-full p-2 bg-zinc-800 rounded-lg"
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={LoginData.password}
+              onChange={(e) =>
+                setLoginData({ ...LoginData, password: e.target.value })
+              }
+              className="w-full p-2 bg-zinc-800 rounded-lg"
+            />
+
+            {authError && (
+              <p className="text-red-400 text-sm">{authError}</p>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={authLoading}
+              className="w-full py-2 bg-white text-black rounded-lg"
+            >
+              {authLoading ? "Loading..." : "Login"}
+            </button>
+
+            <button
+              onClick={() => setShowLogin(false)}
+              className="text-xs text-zinc-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showRegister && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 p-6 rounded-xl w-[350px] space-y-4">
+            <h2 className="text-xl font-bold text-white">Register</h2>
+
+            <input
+              type="text"
+              placeholder="Name"
+              value={RegisterData.name}
+              onChange={(e) =>
+                setRegisterData({ ...RegisterData, name: e.target.value })
+              }
+              className="w-full p-2 bg-zinc-800 rounded-lg"
+            />
+
+            <input
+              type="email"
+              placeholder="Email"
+              value={RegisterData.email}
+              onChange={(e) =>
+                setRegisterData({ ...RegisterData, email: e.target.value })
+              }
+              className="w-full p-2 bg-zinc-800 rounded-lg"
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={RegisterData.password}
+              onChange={(e) =>
+                setRegisterData({ ...RegisterData, password: e.target.value })
+              }
+              className="w-full p-2 bg-zinc-800 rounded-lg"
+            />
+
+            {authError && (
+              <p className="text-red-400 text-sm">{authError}</p>
+            )}
+
+            <button
+              onClick={handleRegister}
+              disabled={authLoading}
+              className="w-full py-2 bg-white text-black rounded-lg"
+            >
+              {authLoading ? "Loading..." : "Register"}
+            </button>
+
+            <button
+              onClick={() => setShowRegister(false)}
+              className="text-xs text-zinc-400"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="absolute inset-0 z-0">
         <FlightMap
@@ -114,19 +319,54 @@ export default function Mainpage() {
           origin={route?.origin}
           destination={route?.destination}
         />
-      
+
       </div>
 
 
       <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-6 text-white">
-          <Image
-            src="/logo.png"
-            alt="Plane Icon"
-            width={32}
-            height={32}
-          />Flight Tracker
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2 text-white text-2xl font-bold">
+            <Image
+              src="/logo.png"
+              alt="Plane Icon"
+              width={32}
+              height={32}
+            />
+            Flight Tracker
+          </div>
+
+          <div className="flex gap-3 items-center">
+            {user ? (
+              <>
+                <span className="text-sm text-zinc-300">
+                  Hi, {user.name}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1 text-sm border border-zinc-700 rounded-lg hover:bg-zinc-800"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowLogin(true)}
+                  className="px-4 py-1 text-sm border border-zinc-700 rounded-lg hover:bg-zinc-800"
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={() => setShowRegister(true)}
+                  className="px-4 py-1 text-sm bg-white text-black rounded-lg hover:bg-zinc-200"
+                >
+                  Register
+                </button>
+              </>
+            )}
+          </div>
+        </div>
 
 
         {history.length > 0 && (
