@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import SearchSection from "./searchsection";
 import Image from "next/image";
+import MapButton from "./mapbutton";
 
 export const API_BASE =
   process.env.NODE_ENV === "development"
@@ -36,7 +37,12 @@ interface FlightRoute {
 export default function Mainpage() {
   const [callsign, setCallsign] = useState("");
   const [route, setRoute] = useState<FlightRoute | null>(null);
-  const [aircraft, setAircraft] = useState<{ lat: number; lon: number; track: number } | null>(null);
+  const [aircraft, setAircraft] = useState<{
+    lat: number;
+    lon: number;
+    track: number;
+  } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
 
@@ -48,7 +54,13 @@ export default function Mainpage() {
   const [authError, setAuthError] = useState("");
 
   const [LoginData, setLoginData] = useState({ email: "", password: "" });
-  const [RegisterData, setRegisterData] = useState({ name: "", email: "", password: "" });
+  const [RegisterData, setRegisterData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [mapStyle, setMapStyle] = useState("streets");
 
   // bottom sheet ht mobile
   const [sheetHeight, setSheetHeight] = useState(75);
@@ -57,7 +69,6 @@ export default function Mainpage() {
   useEffect(() => {
     const saved = localStorage.getItem("flightHistory");
     if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHistory(JSON.parse(saved));
     }
 
@@ -67,7 +78,6 @@ export default function Mainpage() {
   async function verifyUser() {
     try {
       const token = localStorage.getItem("token");
-
       if (!token) return;
 
       const res = await fetch(`${API_BASE}/api/auth/verify`, {
@@ -84,7 +94,7 @@ export default function Mainpage() {
       } else {
         localStorage.removeItem("token");
       }
-    } catch (err) {
+    } catch {
       localStorage.removeItem("token");
     }
   }
@@ -102,7 +112,6 @@ export default function Mainpage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message);
 
       if (data.data?.accessToken) {
@@ -114,7 +123,6 @@ export default function Mainpage() {
       }
 
       setShowLogin(false);
-
     } catch (err: any) {
       setAuthError(err.message);
     } finally {
@@ -135,12 +143,10 @@ export default function Mainpage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message);
 
       alert("Registration successful!");
       setShowRegister(false);
-
     } catch (err: any) {
       setAuthError(err.message);
     } finally {
@@ -182,13 +188,11 @@ export default function Mainpage() {
     setRoute(null);
 
     const upper = callsign.toUpperCase();
-
     const res = await fetch(
       `https://api.adsbdb.com/v0/callsign/${upper}`
     );
 
     const data = await res.json();
-    console.log(data);
 
     if (data?.response?.flightroute) {
       setRoute(data.response.flightroute);
@@ -322,9 +326,11 @@ export default function Mainpage() {
           aircraft={aircraft}
           origin={route?.origin}
           destination={route?.destination}
+          mapStyle={mapStyle}
         />
-
       </div>
+
+
 
 
       <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
@@ -339,7 +345,8 @@ export default function Mainpage() {
             Flight Tracker
           </div>
 
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center ml-auto">
+
             {user ? (
               <>
                 <span className="text-sm text-zinc-300">
@@ -372,7 +379,6 @@ export default function Mainpage() {
           </div>
         </div>
 
-
         {history.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm text-zinc-400 mb-2">
@@ -403,6 +409,10 @@ export default function Mainpage() {
           </div>
         )}
 
+        <div className="mt-4 mb-6 flex justify-start">
+          <MapButton mapStyle={mapStyle} setMapStyle={setMapStyle} />
+        </div>
+
         <SearchSection
           callsign={callsign}
           setCallsign={setCallsign}
@@ -413,11 +423,14 @@ export default function Mainpage() {
         />
       </div>
 
-      {/* mobile sheet */}
+
+
+      {/* mobile sheet  */}
       <div
         className="lg:hidden absolute bottom-0 left-0 w-full bg-zinc-950/95 backdrop-blur-xl rounded-t-3xl border-t border-zinc-800 hide-scrollbar overflow-y-auto"
         style={{ height: `${sheetHeight}%` }}
       >
+
         {/* Drag Handle */}
         <div
           className="flex justify-center py-3"
@@ -441,6 +454,7 @@ export default function Mainpage() {
             </div>
 
             <div className="flex gap-2 items-center">
+
               {user ? (
                 <>
                   <span className="text-xs text-zinc-300 max-w-[80px] truncate">
@@ -502,7 +516,9 @@ export default function Mainpage() {
               </button>
             </div>
           )}
-
+          <div className="mt-4 mb-6 flex justify-end">
+            <MapButton mapStyle={mapStyle} setMapStyle={setMapStyle} />
+          </div>
           <SearchSection
             callsign={callsign}
             setCallsign={setCallsign}
@@ -513,6 +529,7 @@ export default function Mainpage() {
           />
         </div>
       </div>
+
     </div>
   );
 }

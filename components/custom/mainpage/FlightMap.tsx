@@ -27,13 +27,26 @@ interface Props {
     longitude: number;
     name: string;
   };
+  mapStyle: string; 
 }
 
 export default function FlightMap({
   aircraft,
   origin,
   destination,
+  mapStyle, 
 }: Props) {
+
+  const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+
+  const mapStyles: Record<string, string> = {
+    streets: `https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+    dark: `https://api.maptiler.com/maps/darkmatter/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+    satellite: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+    hybrid: `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+    topo: `https://api.maptiler.com/maps/topo/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+  };
+
   const aircraftIcon = useMemo(() => {
     if (!aircraft) return null;
 
@@ -69,10 +82,10 @@ export default function FlightMap({
   const aircraftPosition =
     aircraft?.lat && aircraft?.lon
       ? ([aircraft.lat, aircraft.lon] as [number, number])
-      : ([20.5937, 78.9629] as [number, number]); // Default India center
+      : ([20.5937, 78.9629] as [number, number]);
 
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full">
       <MapContainer
         center={aircraftPosition}
         zoom={6}
@@ -80,8 +93,9 @@ export default function FlightMap({
         className="h-full w-full"
       >
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          key={mapStyle}
+          attribution='&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; OpenStreetMap contributors'
+          url={mapStyles[mapStyle]}
         />
 
         <FeatureGroup>
@@ -96,11 +110,8 @@ export default function FlightMap({
                   color: "#00ffff",
                   weight: 3,
                   dashArray: "4 6",
-                  lineCap: "round",
                 }}
               />
-
-
               <Polyline
                 positions={[
                   [aircraft.lat, aircraft.lon],
@@ -110,10 +121,8 @@ export default function FlightMap({
                   color: "#ff00ff",
                   weight: 3,
                   dashArray: "4 6",
-                  lineCap: "round",
                 }}
               />
-
             </>
           )}
 
