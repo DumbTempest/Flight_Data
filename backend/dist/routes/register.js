@@ -24,7 +24,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 };
 exports.generateAccessAndRefreshToken = generateAccessAndRefreshToken;
-exports.router.get("/", async (req, res) => {
+exports.router.post("/", async (req, res) => {
     try {
         const { name, email, password } = req.body;
         if ([name, email, password].some((field) => !field || field.trim() === "")) {

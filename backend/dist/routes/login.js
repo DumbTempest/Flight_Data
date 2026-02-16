@@ -8,7 +8,7 @@ const express_1 = __importDefault(require("express"));
 const Users_1 = __importDefault(require("../lib/models/Users"));
 const register_1 = require("./register");
 exports.router = express_1.default.Router();
-exports.router.get("/", async (req, res) => {
+exports.router.post("/", async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {

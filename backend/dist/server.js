@@ -11,15 +11,18 @@ const login_1 = __importDefault(require("./routes/login"));
 const verify_1 = __importDefault(require("./routes/verify"));
 const mongodb_1 = require("./lib/mongodb");
 const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+}));
 app.use(express_1.default.json({ limit: "10mb" }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/api/status", status_1.default);
 app.use("/api/auth/registerUser", register_1.default);
 app.use("/api/auth/loginUser", login_1.default);
 app.use("/api/auth/verify", verify_1.default);
-app.listen(3001, async () => {
-    console.log(`🚀 Express TS server running on port 3001`);
+app.listen(4000, async () => {
+    console.log(`🚀 Express TS server running on port 4000`);
     await (0, mongodb_1.connectDB)();
 });
 //# sourceMappingURL=server.js.map
