@@ -363,7 +363,7 @@ export default function Mainpage() {
               <>
                 <button
                   onClick={() => setShowLogin(true)}
-                  className="px-4 py-1 text-sm border border-zinc-700 rounded-lg hover:bg-zinc-800"
+                  className="px-4 py-1 text-sm border text-white border-zinc-700 rounded-lg hover:bg-zinc-800"
                 >
                   Login
                 </button>
@@ -471,7 +471,7 @@ export default function Mainpage() {
                 <>
                   <button
                     onClick={() => setShowLogin(true)}
-                    className="px-2 py-1 text-xs border border-zinc-700 rounded-lg"
+                    className="px-2 py-1 text-xs text-white border border-zinc-700 rounded-lg"
                   >
                     Login
                   </button>
