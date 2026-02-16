@@ -8,7 +8,7 @@ import Image from "next/image";
 export const API_BASE =
   process.env.NODE_ENV === "development"
     ? "http://localhost:4000"
-    : "https://flight-tracker-api.uni-cc.site/";
+    : "https://flight-tracker-api.uni-cc.site";
 
 const FlightMap = dynamic(() => import("./FlightMap"), {
   ssr: false,
