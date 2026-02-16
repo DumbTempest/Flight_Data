@@ -5,6 +5,11 @@ import dynamic from "next/dynamic";
 import SearchSection from "./searchsection";
 import Image from "next/image";
 
+export const API_BASE =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:4000"
+    : "https://flight-tracker-api.uni-cc.site/";
+
 const FlightMap = dynamic(() => import("./FlightMap"), {
   ssr: false,
 });
@@ -65,7 +70,7 @@ export default function Mainpage() {
 
       if (!token) return;
 
-      const res = await fetch("http://localhost:3001/api/auth/verify", {
+      const res = await fetch(`${API_BASE}/api/auth/verify`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -73,7 +78,6 @@ export default function Mainpage() {
       });
 
       const data = await res.json();
-      console.log(res);
 
       if (data.success) {
         setUser(data.data);
@@ -90,7 +94,7 @@ export default function Mainpage() {
       setAuthLoading(true);
       setAuthError("");
 
-      const res = await fetch("http://localhost:3001/api/auth/loginUser", {
+      const res = await fetch(`${API_BASE}/api/auth/loginUser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(LoginData),
@@ -123,7 +127,7 @@ export default function Mainpage() {
       setAuthLoading(true);
       setAuthError("");
 
-      const res = await fetch("http://localhost:3001/api/auth/registerUser", {
+      const res = await fetch(`${API_BASE}/api/auth/registerUser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(RegisterData),
@@ -425,14 +429,49 @@ export default function Mainpage() {
         </div>
 
         <div className="px-6 pb-10">
-          <h1 className="text-2xl font-bold mb-6 text-white rounded-full">
-            <Image
-              src="/logo.png"
-              alt="Plane Icon"
-              width={32}
-              height={32}
-            /> Flight Tracker
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2 text-white text-2xl font-bold">
+              <Image
+                src="/logo.png"
+                alt="Plane Icon"
+                width={32}
+                height={32}
+              />
+              Flight Tracker
+            </div>
+
+            <div className="flex gap-2 items-center">
+              {user ? (
+                <>
+                  <span className="text-xs text-zinc-300 max-w-[80px] truncate">
+                    Hi, {user.name}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="px-2 py-1 text-xs border border-zinc-700 rounded-lg"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowLogin(true)}
+                    className="px-2 py-1 text-xs border border-zinc-700 rounded-lg"
+                  >
+                    Login
+                  </button>
+
+                  <button
+                    onClick={() => setShowRegister(true)}
+                    className="px-2 py-1 text-xs bg-white text-black rounded-lg"
+                  >
+                    Register
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
 
           {history.length > 0 && (
             <div className="mb-6">
