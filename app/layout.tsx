@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Roboto } from 'next/font/google';
 import type { Viewport, Metadata } from "next";
 import './globals.css';
 import "leaflet/dist/leaflet.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const viewport: Viewport = {
   themeColor: [
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${geistSans.variable} ${geistMono.variable} ${roboto.variable} antialiased`}
       >
         {children}
+        <Toaster richColors />
       </body>
     </html>
   );

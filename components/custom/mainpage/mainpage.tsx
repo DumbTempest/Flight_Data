@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import SearchSection from "./searchsection";
 import Image from "next/image";
 import MapButton from "./mapbutton";
+import MobileMainpage from "./mobileMainpage";
 
 export const API_BASE =
   process.env.NODE_ENV === "development"
@@ -62,9 +63,10 @@ export default function Mainpage() {
 
   const [mapStyle, setMapStyle] = useState("streets");
 
-  // bottom sheet ht mobile
+  // bottom sheet height on mobile
   const [sheetHeight, setSheetHeight] = useState(75);
   const startY = useRef<number | null>(null);
+  const startHeight = useRef<number>(75); // track height at drag start
 
   useEffect(() => {
     const saved = localStorage.getItem("flightHistory");
@@ -161,16 +163,21 @@ export default function Mainpage() {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
+    startHeight.current = sheetHeight;
   };
+
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (startY.current === null) return;
 
     const diff = startY.current - e.touches[0].clientY;
-    const newHeight = Math.min(100, Math.max(30, sheetHeight + diff / 5));
+    const screenH = window.innerHeight;
+    const newHeight = Math.min(
+      100,
+      Math.max(30, startHeight.current + (diff / screenH) * 100)
+    );
 
     setSheetHeight(newHeight);
-    startY.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = () => {
@@ -188,19 +195,17 @@ export default function Mainpage() {
     setRoute(null);
 
     const upper = callsign.toUpperCase();
-    const res = await fetch(
-      `https://api.adsbdb.com/v0/callsign/${upper}`
-    );
+    const res = await fetch(`https://api.adsbdb.com/v0/callsign/${upper}`);
 
     const data = await res.json();
 
     if (data?.response?.flightroute) {
       setRoute(data.response.flightroute);
 
-      const updated = [
-        upper,
-        ...history.filter((c) => c !== upper),
-      ].slice(0, 5);
+      const updated = [upper, ...history.filter((c) => c !== upper)].slice(
+        0,
+        5
+      );
 
       setHistory(updated);
       localStorage.setItem("flightHistory", JSON.stringify(updated));
@@ -321,7 +326,7 @@ export default function Mainpage() {
         </div>
       )}
 
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 lg:right-[370px] z-0">
         <FlightMap
           aircraft={aircraft}
           origin={route?.origin}
@@ -330,10 +335,8 @@ export default function Mainpage() {
         />
       </div>
 
-
-
-
-      <div className="hidden lg:block absolute right-0 top-0 h-full w-[420px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto">
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block absolute right-0 top-0 h-full w-[370px] bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800 p-6 overflow-y-auto z-10">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2 text-white text-2xl font-bold">
             <Image
@@ -341,12 +344,12 @@ export default function Mainpage() {
               alt="Plane Icon"
               width={32}
               height={32}
+              className="rounded-full "
             />
-            Flight Tracker
+            Fliracker
           </div>
 
           <div className="flex gap-3 items-center ml-auto">
-
             {user ? (
               <>
                 <span className="text-sm text-zinc-300">
@@ -381,9 +384,7 @@ export default function Mainpage() {
 
         {history.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm text-zinc-400 mb-2">
-              Recent Searches
-            </h3>
+            <h3 className="text-sm text-zinc-400 mb-2 text-white">Recent Searches</h3>
 
             <div className="flex flex-wrap gap-2 mb-2">
               {history.map((item) => (
@@ -393,23 +394,23 @@ export default function Mainpage() {
                     setCallsign(item);
                     fetchFlight();
                   }}
-                  className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg hover:bg-zinc-700"
+                  className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg text-white hover:bg-zinc-700"
                 >
                   {item}
                 </button>
               ))}
             </div>
 
-            <button
-              onClick={clearHistory}
-              className="text-xs text-red-400"
-            >
+            <button onClick={clearHistory} className="text-xs text-red-400">
               Clear history
             </button>
           </div>
         )}
 
         <div className="mt-4 mb-6 flex justify-start">
+          <p className="text-md text-zinc-400 mt-2 mr-2">
+            Map Style:
+          </p>
           <MapButton mapStyle={mapStyle} setMapStyle={setMapStyle} />
         </div>
 
@@ -425,110 +426,54 @@ export default function Mainpage() {
 
 
 
-      {/* mobile sheet  */}
-      <div
-        className="lg:hidden absolute bottom-0 left-0 w-full bg-zinc-950/95 backdrop-blur-xl rounded-t-3xl border-t border-zinc-800 hide-scrollbar overflow-y-auto"
-        style={{ height: `${sheetHeight}%` }}
-      >
 
+
+
+
+
+
+      {/* Mobile Bar Starts */}
+      {/* Mobile bottom sheet */}
+      <div
+        className="lg:hidden absolute bottom-0 left-0 w-full bg-zinc-950/95 backdrop-blur-xl rounded-t-3xl border-t border-zinc-800 z-10"
+        style={{
+          height: `${sheetHeight}%`,
+          transition:
+            startY.current === null
+              ? "height 0.35s cubic-bezier(0.32, 0.72, 0, 1)"
+              : "none",
+          willChange: "height",
+        }}
+      >
         {/* Drag Handle */}
         <div
-          className="flex justify-center py-3"
+          className="touch-none select-none flex justify-center items-center pt-4 pb-3 px-6"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-14 h-1.5 bg-zinc-600 rounded-full" />
+          <div className="w-10 h-1 bg-zinc-600 rounded-full" />
         </div>
 
-        <div className="px-6 pb-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 text-white text-2xl font-bold">
-              <Image
-                src="/logo.png"
-                alt="Plane Icon"
-                width={32}
-                height={32}
-              />
-              Flight Tracker
-            </div>
-
-            <div className="flex gap-2 items-center">
-
-              {user ? (
-                <>
-                  <span className="text-xs text-zinc-300 max-w-[80px] truncate">
-                    Hi, {user.name}
-                  </span>
-                  <button
-                    onClick={handleLogout}
-                    className="px-2 py-1 text-xs border border-zinc-700 rounded-lg"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setShowLogin(true)}
-                    className="px-2 py-1 text-xs text-white border border-zinc-700 rounded-lg"
-                  >
-                    Login
-                  </button>
-
-                  <button
-                    onClick={() => setShowRegister(true)}
-                    className="px-2 py-1 text-xs bg-white text-black rounded-lg"
-                  >
-                    Register
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {history.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm text-zinc-400 mb-2">
-                Recent Searches
-              </h3>
-
-              <div className="flex flex-wrap gap-2 mb-2">
-                {history.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      setCallsign(item);
-                      fetchFlight();
-                    }}
-                    className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={clearHistory}
-                className="text-xs text-red-400"
-              >
-                Clear history
-              </button>
-            </div>
-          )}
-          <div className="mt-4 mb-6 flex justify-end">
-            <MapButton mapStyle={mapStyle} setMapStyle={setMapStyle} />
-          </div>
-          <SearchSection
-            callsign={callsign}
-            setCallsign={setCallsign}
-            fetchFlight={fetchFlight}
-            loading={loading}
-            route={route}
-            setAircraft={setAircraft}
-          />
-        </div>
+        {/* Mobile Content */}
+        <MobileMainpage
+          user={user}
+          handleLogout={handleLogout}
+          setShowLogin={setShowLogin}
+          setShowRegister={setShowRegister}
+          history={history}
+          setCallsign={setCallsign}
+          fetchFlight={fetchFlight}
+          clearHistory={clearHistory}
+          mapStyle={mapStyle}
+          setMapStyle={setMapStyle}
+          callsign={callsign}
+          loading={loading}
+          route={route}
+          setAircraft={setAircraft}
+        />
       </div>
+
 
     </div>
   );

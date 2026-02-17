@@ -27,16 +27,21 @@ interface Props {
     longitude: number;
     name: string;
   };
-  mapStyle: string; 
+  mapStyle: string;
 }
+
+// Hard clamp so the map never pans beyond the real world bounds
+const WORLD_BOUNDS = L.latLngBounds(
+  L.latLng(-85, -180),
+  L.latLng(85, 180)
+);
 
 export default function FlightMap({
   aircraft,
   origin,
   destination,
-  mapStyle, 
+  mapStyle,
 }: Props) {
-
   const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
   const mapStyles: Record<string, string> = {
@@ -73,8 +78,7 @@ export default function FlightMap({
   }, [aircraft]);
 
   const airportIcon = new L.Icon({
-    iconUrl:
-      "https://unpkg.com/leaflet@1.5.1/dist/images/marker-icon.png",
+    iconUrl: "https://unpkg.com/leaflet@1.5.1/dist/images/marker-icon.png",
     iconSize: [25, 41],
     iconAnchor: [12, 41],
   });
@@ -85,17 +89,26 @@ export default function FlightMap({
       : ([20.5937, 78.9629] as [number, number]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full bg-zinc-950 pl-0">
       <MapContainer
         center={aircraftPosition}
         zoom={6}
+
+        minZoom={2}
+        maxZoom={18}
+        maxBounds={WORLD_BOUNDS}
+        maxBoundsViscosity={1.0}
         scrollWheelZoom
         className="h-full w-full"
+        style={{ background: "#09090b" }}
       >
         <TileLayer
           key={mapStyle}
           attribution='&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; OpenStreetMap contributors'
           url={mapStyles[mapStyle]}
+          noWrap={true}
+          
+          bounds={WORLD_BOUNDS}
         />
 
         <FeatureGroup>
