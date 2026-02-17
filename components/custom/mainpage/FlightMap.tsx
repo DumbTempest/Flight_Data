@@ -55,7 +55,7 @@ export default function FlightMap({
   const aircraftIcon = useMemo(() => {
     if (!aircraft) return null;
 
-    const rotation = (aircraft.track ?? 0) - 90;
+    const rotation = (aircraft.track ?? 0);
 
     return L.divIcon({
       html: `
